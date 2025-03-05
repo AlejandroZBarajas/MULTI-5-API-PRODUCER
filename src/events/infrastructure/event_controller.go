@@ -57,9 +57,15 @@ func (ec *EventController) GetAllHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	events, err := ec.GetAllUseCase.Run()
+	events, err := ec.GetAllUseCase.Execute()
 
 	if err != nil {
+
+		if err.Error() == "no existen registros" {
+			http.Error(w, "No existen registros", http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, fmt.Sprintf("Error al obtener eventos: %v", err), http.StatusInternalServerError)
 		return
 	}

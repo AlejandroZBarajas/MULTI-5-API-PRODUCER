@@ -13,6 +13,6 @@ func NewGetAllEvents(repo domain.EventInterface) *GetAllEvents {
 	return &GetAllEvents{repo: repo}
 }
 
-func (gae *GetAllEvents) Run() ([]*evententity.Event, error) {
+func (gae *GetAllEvents) Execute() ([]*evententity.Event, error) {
 	return gae.repo.GetAll()
 }

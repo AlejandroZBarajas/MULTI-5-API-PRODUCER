@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
 
@@ -19,21 +20,20 @@ var err error
 func LoadEnv() {
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatal("error al cargar archivo .env: '%v'", err)
+		log.Fatal("error al cargar archivo .env: '%w'", err)
 	}
 }
 
 func ConnectDB() {
 	LoadEnv()
 
-	User := os.Getenv("USER")
+	User := os.Getenv("DB_USER")
 	Password := os.Getenv("PASSWORD")
 	Host := os.Getenv("HOST")
 	Port := os.Getenv("PORT")
 	Name := os.Getenv("NAME")
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", User, Password, Host, Port, Name)
-
 	db, err = sql.Open("mysql", dsn)
 
 	if err != nil {
