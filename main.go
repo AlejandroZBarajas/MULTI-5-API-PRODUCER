@@ -1,7 +1,15 @@
 package main
 
+import (
+	"minimulti/src/core/infrastructureC"
+	"minimulti/src/events/infrastructure"
+)
 
+func main() {
+	infrastructureC.ConnectDB()
+	db := infrastructureC.GetDB()
+	EventRepo := infrastructure.NewEventRepository(db)
 
-func main(){
+	infrastructureC.SetRoutes(EventController)
 
 }

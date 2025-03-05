@@ -1,4 +1,4 @@
-package infrastructurec
+package infrastructureC
 
 import (
 	"database/sql"

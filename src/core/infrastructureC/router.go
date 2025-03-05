@@ -1,6 +1,7 @@
-package infrastructurec
+package infrastructureC
 
 import (
+	"minimulti/src/events/infrastructure"
 	"net/http"
 )
 
@@ -19,26 +20,28 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func MethodHandler(w http.ResponseWriter, r *http.Request) {
+func MethodHandler(w http.ResponseWriter, r *http.Request, ec *infrastructure.EventController) {
 	switch r.Method {
 
 	case http.MethodPost:
-		ec.PostHandler(w, r)
+		ec.CreateNewHandler(w, r)
 
 	case http.MethodGet:
 		ec.GetAllHandler(w, r)
 
 	case http.MethodDelete:
-		ec.DeleteHandler(w, r)
+		ec.DeleteAllHandler(w, r)
 
 	default:
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 	}
 }
 
-func SetRoutes(ec *Infrastructure.EventController) {
+func SetRoutes(ec *infrastructure.EventController) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/events", MethodHandler)
+	mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
+		MethodHandler(w, r, ec)
+	})
 	http.Handle("/", corsMiddleware(mux))
 
 }
