@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"encoding/json"
 	"fmt"
+	"minimulti/src/core/rabbit/infrastructureR"
 	"minimulti/src/events/application"
 	"net/http"
 )
@@ -11,17 +12,20 @@ type EventController struct {
 	CreateUseCase          *application.CreateEvent
 	GetAllUseCase          *application.GetAllEvents
 	DeleteAllEventsUseCase *application.DeletEvents
+	RabbitClient           *infrastructureR.RabbitMQ
 }
 
 func NewEventController(
 	create *application.CreateEvent,
 	getAll *application.GetAllEvents,
 	deleteAll *application.DeletEvents,
+	rabbitClient *infrastructureR.RabbitMQ,
 ) *EventController {
 	return &EventController{
 		CreateUseCase:          create,
 		GetAllUseCase:          getAll,
 		DeleteAllEventsUseCase: deleteAll,
+		RabbitClient:           rabbitClient,
 	}
 }
 
@@ -47,6 +51,24 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, fmt.Sprintf("Error al registrar evento: %v", err), http.StatusInternalServerError)
 		return
 	}
+
+	eventNotification := map[string]interface{}{
+		"device_name": espInput.Device_name,
+		"message":     "Evento registrado desde dispositivo",
+	}
+
+	eventNotificationJSON, err := json.Marshal(eventNotification)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error al convertir mensaje a JSON: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	err = ec.RabbitClient.PublishMessage("event_queue", eventNotificationJSON)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error al publicar mensaje en RabbitMQ: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(fmt.Sprintf("Evento registrado desde: '%s'", espInput.Device_name)))
 }

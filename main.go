@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"minimulti/src/core/infrastructureC"
+	"minimulti/src/core/rabbit/infrastructureR"
 	"minimulti/src/events/application"
 	"minimulti/src/events/infrastructure"
 	"net/http"
@@ -19,10 +20,17 @@ func main() {
 	getAllEventsUseCase := application.NewGetAllEvents(eventRepo)
 	deleteAllEvents := application.NewDeletEvents(eventRepo)
 
+	rabbitClient, err := infrastructureR.NewRabbitMQ()
+	if err != nil {
+		log.Fatalf("Error al conectar a RabbitMQ: %v", err)
+	}
+	defer rabbitClient.Close()
+
 	eventController := infrastructure.NewEventController(
 		createUseCase,
 		getAllEventsUseCase,
 		deleteAllEvents,
+		rabbitClient,
 	)
 
 	infrastructureC.SetRoutes(eventController)
