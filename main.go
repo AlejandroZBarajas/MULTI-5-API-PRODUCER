@@ -36,5 +36,5 @@ func main() {
 	infrastructureC.SetRoutes(eventController)
 
 	fmt.Println("Servidor corriendo en el puerto 8080...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }

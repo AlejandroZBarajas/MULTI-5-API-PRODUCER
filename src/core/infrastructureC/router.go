@@ -1,6 +1,7 @@
 package infrastructureC
 
 import (
+	"fmt"
 	"minimulti/src/events/infrastructure"
 	"net/http"
 )
@@ -40,6 +41,7 @@ func MethodHandler(w http.ResponseWriter, r *http.Request, ec *infrastructure.Ev
 func SetRoutes(ec *infrastructure.EventController) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("solicitud recibida en /events con metodo: ", r.Method)
 		MethodHandler(w, r, ec)
 	})
 	http.Handle("/", corsMiddleware(mux))
