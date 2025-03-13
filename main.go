@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"minimulti/src/core/infrastructureC"
+	"minimulti/src/core/mysql/infrastructureC"
 	"minimulti/src/core/rabbit/infrastructureR"
 	"minimulti/src/events/application"
 	"minimulti/src/events/infrastructure"
