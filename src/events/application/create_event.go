@@ -1,7 +1,6 @@
 package application
 
 import (
-	"fmt"
 	"minimulti/src/events/domain"
 	evententity "minimulti/src/events/domain/event_entity"
 )
@@ -14,12 +13,12 @@ func NewCreateEvent(repo domain.EventInterface) *CreateEvent {
 	return &CreateEvent{repo: repo}
 }
 
-func (ce *CreateEvent) Run(title string, description string, emitter string, topic string) error {
+func (ce *CreateEvent) Run(title string, description string, emitter string, topic string) (int, error) {
 	event := evententity.CreateEvent(title, description, emitter, topic)
 
-	err := ce.repo.Create(event)
+	id, err := ce.repo.Create(event)
 	if err != nil {
-		return fmt.Errorf("error :'%w'", err)
+		return 0, err
 	}
-	return nil
+	return id, nil
 }

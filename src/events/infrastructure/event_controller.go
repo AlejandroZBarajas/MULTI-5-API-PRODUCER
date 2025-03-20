@@ -50,13 +50,14 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 	}
 	fmt.Printf("Datos recibidos en controller: %v\n", espInput)
 
-	err = ec.CreateUseCase.Run(espInput.Title, espInput.Description, espInput.Emitter, espInput.Topic)
+	eventID, err := ec.CreateUseCase.Run(espInput.Title, espInput.Description, espInput.Emitter, espInput.Topic)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error al registrar evento: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	eventNotification := map[string]interface{}{
+		"id":          eventID,
 		"title":       espInput.Title,
 		"description": espInput.Description,
 		"emitter":     espInput.Emitter,
@@ -76,7 +77,7 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(fmt.Sprintf("%s : %s .Registrado desde: '%s'", espInput.Title, espInput.Description, espInput.Emitter)))
+	w.Write([]byte(fmt.Sprintf("%s : %s .Registrado desde: '%s' con ID: %d", espInput.Title, espInput.Description, espInput.Emitter, eventID)))
 }
 
 func (ec *EventController) GetAllHandler(w http.ResponseWriter, r *http.Request) {
