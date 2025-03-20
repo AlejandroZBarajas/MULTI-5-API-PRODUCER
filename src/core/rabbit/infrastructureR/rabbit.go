@@ -5,92 +5,68 @@ import (
 	"log"
 	"os"
 
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joho/godotenv"
-	"github.com/streadway/amqp"
+	//"github.com/streadway/amqp"
 )
 
-type RabbitMQ struct {
-	connection *amqp.Connection
-	channel    *amqp.Channel
-	exchange   string
+type MQTTClient struct {
+	client    mqtt.Client
+	topic     string
+	brokerURL string
 }
 
-type RabbitMQConfig struct {
-	URL       string
-	QueueName string
+type MQTTConfig struct {
+	URL   string
+	Topic string
 }
 
-func NewRabbitMQ() (*RabbitMQ, error) {
+func NewMQTTClient() (*MQTTClient, error) {
 
 	err := godotenv.Load()
 	if err != nil {
 		log.
 			Fatalf("Error al cargar el archivo .env: %v", err)
 	}
-	rabbitURL := os.Getenv("RABBITMQ_URL")
-	exchangeName := os.Getenv("EXCHANGE_NAME")
 
-	if rabbitURL == "" || exchangeName == "" {
+	brokerURL := os.Getenv("RABBITMQ_URL")
+	topic := os.Getenv("MQTT_TOPIC")
+
+	if brokerURL == "" || topic == "" {
 		return nil, fmt.Errorf("variables de entorno RABBITMQ indefinidas")
 	}
 
-	conn, err := amqp.Dial(rabbitURL)
-	if err != nil {
-		return nil, fmt.Errorf("error al conectar con RabbitMQ: %w", err)
-	}
-	fmt.Println("conectado a rabbit")
+	opts := mqtt.NewClientOptions()
+	opts.AddBroker(brokerURL)
+	opts.SetClientID("api-client")
+	opts.SetCleanSession(true)
+	opts.SetWill(topic, "API desconectada", 0, false)
 
-	ch, err := conn.Channel()
-	if err != nil {
-		conn.Close()
-		return nil, fmt.Errorf("error al abrir el canal de RabbitMQ: %w", err)
-	}
+	client := mqtt.NewClient(opts)
 
-	err = ch.ExchangeDeclare(
-		exchangeName, // Nombre del exchange
-		"topic",      // Tipo de exchange
-		true,         // Durable
-		false,        // Auto-delete
-		false,        // Internal
-		false,        // NoWait
-		nil,          // Argumentos
-	)
-	/* _, err = ch.QueueDeclare(
-		queueName, // Nombre de la cola
-		true,      // Durable
-		false,     // Auto-delete
-		false,     // Exclusive
-		false,     // NoWait
-		nil,       // Argumentos adicionales
-	) */
-	if err != nil {
-		return nil, fmt.Errorf("error al declarar la cola: %w", err)
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		return nil, fmt.Errorf("error al conectar con el broker MQTT: %w", token.Error())
 	}
+	fmt.Println("Conectado al broker MQTT")
 
-	return &RabbitMQ{
-		connection: conn,
-		channel:    ch,
-		exchange:   exchangeName,
+	return &MQTTClient{
+		client:    client,
+		topic:     topic,
+		brokerURL: brokerURL,
 	}, nil
 }
 
-func (client *RabbitMQ) PublishMessage(routingKey string, message []byte) error {
-	err := client.channel.Publish(
-		client.exchange, // Exchange
-		routingKey,
-		false, // Mandatory
-		false, // Immediate
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        message,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("error al publicar mensaje: %w", err)
+func (client *MQTTClient) PublishMessage(topic string, message []byte) error {
+	token := client.client.Publish(topic, 0, false, message)
+	token.Wait()
+
+	if token.Error() != nil {
+		return fmt.Errorf("error al publicar mensaje en MQTT: %w", token.Error())
 	}
 	return nil
 }
 
+/*
 func (client *RabbitMQ) Close() error {
 	if err := client.channel.Close(); err != nil {
 		return err
@@ -126,3 +102,4 @@ func (client *RabbitMQ) DeclareQueue(queueName, routingKey string) error {
 	fmt.Printf("✅ Cola '%s' enlazada a exchange '%s' con routing key '%s'\n", queueName, client.exchange, routingKey)
 	return nil
 }
+*/

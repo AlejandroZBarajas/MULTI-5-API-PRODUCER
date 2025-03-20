@@ -13,20 +13,20 @@ type EventController struct {
 	CreateUseCase          *application.CreateEvent
 	GetAllUseCase          *application.GetAllEvents
 	DeleteAllEventsUseCase *application.DeletEvents
-	RabbitClient           *infrastructureR.RabbitMQ
+	MQTTClient             *infrastructureR.MQTTClient
 }
 
 func NewEventController(
 	create *application.CreateEvent,
 	getAll *application.GetAllEvents,
 	deleteAll *application.DeletEvents,
-	rabbitClient *infrastructureR.RabbitMQ,
+	mqttClient *infrastructureR.MQTTClient,
 ) *EventController {
 	return &EventController{
 		CreateUseCase:          create,
 		GetAllUseCase:          getAll,
 		DeleteAllEventsUseCase: deleteAll,
-		RabbitClient:           rabbitClient,
+		MQTTClient:             mqttClient,
 	}
 }
 
@@ -69,7 +69,7 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = ec.RabbitClient.PublishMessage(espInput.Topic, eventNotificationJSON)
+	err = ec.MQTTClient.PublishMessage(espInput.Topic, eventNotificationJSON)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error al publicar mensaje en RabbitMQ: %v", err), http.StatusInternalServerError)
 		return
