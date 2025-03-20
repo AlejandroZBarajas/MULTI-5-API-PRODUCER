@@ -15,21 +15,29 @@ func NewEventRepository(db *sql.DB) *EventRepository {
 	return &EventRepository{db: db}
 }
 
-func (repo *EventRepository) Create(event *evententity.Event) (int, error) {
+func (repo *EventRepository) Create(event *evententity.Event) (int, string, error) {
 	query := "INSERT INTO notifications (title, description, emitter, topic) VALUES(?, ?, ?, ?)"
 	fmt.Printf("%s : %s .Registrado desde: '%s' GUARDADO EN BASE DE DATOS (event repo)", event.Title, event.Description, event.Emitter)
 
 	result, err := repo.db.Exec(query, event.Title, event.Description, event.Emitter, event.Topic)
 
 	if err != nil {
-		return 0, err
-	}
-	lastInsertID, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 
-	return int(lastInsertID), nil
+	lastInsertID, err := result.LastInsertId()
+	if err != nil {
+		return 0, "", err
+	}
+
+	var createdAt string
+	err = repo.db.QueryRow("SELECT created_at FROM notifications WHERE id = ?", lastInsertID).Scan(&createdAt)
+
+	if err != nil {
+		return 0, "", err
+	}
+
+	return int(lastInsertID), createdAt, nil
 }
 
 func (repo *EventRepository) GetAll() ([]*evententity.Event, error) {
