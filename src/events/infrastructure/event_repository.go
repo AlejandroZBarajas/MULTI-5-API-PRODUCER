@@ -16,9 +16,9 @@ func NewEventRepository(db *sql.DB) *EventRepository {
 }
 
 func (repo *EventRepository) Create(event *evententity.Event) error {
-	query := "INSERT INTO notifications (title, description, emitter) VALUES(?, ?, ?)"
+	query := "INSERT INTO notifications (title, description, emitter, topic) VALUES(?, ?, ?, ?)"
 	fmt.Printf("%s : %s .Registrado desde: '%s' GUARDADO EN BASE DE DATOS (event repo)", event.Title, event.Description, event.Emitter)
-	_, err := repo.db.Exec(query, event.Title, event.Description, event.Emitter)
+	_, err := repo.db.Exec(query, event.Title, event.Description, event.Emitter, event.Topic)
 	if err != nil {
 		return fmt.Errorf("error: %s", err)
 	}
@@ -26,7 +26,7 @@ func (repo *EventRepository) Create(event *evententity.Event) error {
 }
 
 func (repo *EventRepository) GetAll() ([]*evententity.Event, error) {
-	query := "SELECT id, title, description, emitter, created_at FROM notifications"
+	query := "SELECT id, title, description, emitter, created_at, topic FROM notifications"
 	rows, err := repo.db.Query(query)
 
 	if err != nil {
@@ -40,7 +40,7 @@ func (repo *EventRepository) GetAll() ([]*evententity.Event, error) {
 		var event evententity.Event
 		var createdAtRaw []uint8
 
-		if err := rows.Scan(&event.Id, &event.Title, &event.Description, &event.Emitter, &createdAtRaw); err != nil {
+		if err := rows.Scan(&event.Id, &event.Title, &event.Description, &event.Emitter, &createdAtRaw, &event.Topic); err != nil {
 			return nil, fmt.Errorf("error al obtener datos: %w", err)
 		}
 

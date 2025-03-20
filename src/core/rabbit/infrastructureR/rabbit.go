@@ -12,6 +12,7 @@ import (
 type RabbitMQ struct {
 	connection *amqp.Connection
 	channel    *amqp.Channel
+	exchange   string
 }
 
 type RabbitMQConfig struct {
@@ -27,9 +28,9 @@ func NewRabbitMQ() (*RabbitMQ, error) {
 			Fatalf("Error al cargar el archivo .env: %v", err)
 	}
 	rabbitURL := os.Getenv("RABBITMQ_URL")
-	queueName := os.Getenv("QUEUE_NAME")
+	exchangeName := os.Getenv("EXCHANGE_NAME")
 
-	if rabbitURL == "" || queueName == "" {
+	if rabbitURL == "" || exchangeName == "" {
 		return nil, fmt.Errorf("variables de entorno RABBITMQ indefinidas")
 	}
 
@@ -41,17 +42,27 @@ func NewRabbitMQ() (*RabbitMQ, error) {
 
 	ch, err := conn.Channel()
 	if err != nil {
+		conn.Close()
 		return nil, fmt.Errorf("error al abrir el canal de RabbitMQ: %w", err)
 	}
 
-	_, err = ch.QueueDeclare(
+	err = ch.ExchangeDeclare(
+		exchangeName, // Nombre del exchange
+		"topic",      // Tipo de exchange
+		true,         // Durable
+		false,        // Auto-delete
+		false,        // Internal
+		false,        // NoWait
+		nil,          // Argumentos
+	)
+	/* _, err = ch.QueueDeclare(
 		queueName, // Nombre de la cola
 		true,      // Durable
 		false,     // Auto-delete
 		false,     // Exclusive
 		false,     // NoWait
 		nil,       // Argumentos adicionales
-	)
+	) */
 	if err != nil {
 		return nil, fmt.Errorf("error al declarar la cola: %w", err)
 	}
@@ -59,15 +70,16 @@ func NewRabbitMQ() (*RabbitMQ, error) {
 	return &RabbitMQ{
 		connection: conn,
 		channel:    ch,
+		exchange:   exchangeName,
 	}, nil
 }
 
-func (client *RabbitMQ) PublishMessage(queueName string, message []byte) error {
+func (client *RabbitMQ) PublishMessage(routingKey string, message []byte) error {
 	err := client.channel.Publish(
-		"",        // Exchange
-		queueName, // Routing key (nombre de la cola)
-		false,     // Mandatory
-		false,     // Immediate
+		client.exchange, // Exchange
+		routingKey,
+		false, // Mandatory
+		false, // Immediate
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        message,
@@ -84,4 +96,33 @@ func (client *RabbitMQ) Close() error {
 		return err
 	}
 	return client.connection.Close()
+}
+
+func (client *RabbitMQ) DeclareQueue(queueName, routingKey string) error {
+
+	_, err := client.channel.QueueDeclare(
+		queueName, // Nombre de la cola
+		true,      // Durable
+		false,     // Auto-delete
+		false,     // Exclusive
+		false,     // NoWait
+		nil,       // Argumentos adicionales
+	)
+	if err != nil {
+		return fmt.Errorf("error al declarar la cola %s: %w", queueName, err)
+	}
+
+	err = client.channel.QueueBind(
+		queueName,       // Nombre de la cola
+		routingKey,      // Routing key (ej: "notificaciones.*")
+		client.exchange, // Exchange
+		false,           // NoWait
+		nil,             // Argumentos
+	)
+	if err != nil {
+		return fmt.Errorf("error al enlazar la cola %s con el routing key %s: %w", queueName, routingKey, err)
+	}
+
+	fmt.Printf("✅ Cola '%s' enlazada a exchange '%s' con routing key '%s'\n", queueName, client.exchange, routingKey)
+	return nil
 }

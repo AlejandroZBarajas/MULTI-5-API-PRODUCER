@@ -40,6 +40,7 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 		Title       string `json:"title"`
 		Description string `json:"description"`
 		Emitter     string `json:"emitter"`
+		Topic       string `json:"topic"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&espInput)
@@ -49,7 +50,7 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 	}
 	fmt.Printf("Datos recibidos en controller: %v\n", espInput)
 
-	err = ec.CreateUseCase.Run(espInput.Title, espInput.Description, espInput.Emitter)
+	err = ec.CreateUseCase.Run(espInput.Title, espInput.Description, espInput.Emitter, espInput.Topic)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error al registrar evento: %v", err), http.StatusInternalServerError)
 		return
@@ -59,6 +60,7 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 		"title":       espInput.Title,
 		"description": espInput.Description,
 		"emitter":     espInput.Emitter,
+		"topic":       espInput.Topic,
 	}
 
 	eventNotificationJSON, err := json.Marshal(eventNotification)
@@ -67,7 +69,7 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = ec.RabbitClient.PublishMessage("event_queue", eventNotificationJSON)
+	err = ec.RabbitClient.PublishMessage(espInput.Topic, eventNotificationJSON)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error al publicar mensaje en RabbitMQ: %v", err), http.StatusInternalServerError)
 		return
