@@ -37,10 +37,11 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	var espInput struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Emitter     string `json:"emitter"`
-		Topic       string `json:"topic"`
+		Serie       string  `json:"serie"`
+		Title       string  `json:"title"`
+		Description float32 `json:"description"`
+		Emitter     string  `json:"emitter"`
+		Topic       string  `json:"topic"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&espInput)
@@ -50,7 +51,7 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 	}
 	fmt.Printf("Datos recibidos en controller: %v\n", espInput)
 
-	eventID, createdAt, err := ec.CreateUseCase.Run(espInput.Title, espInput.Description, espInput.Emitter, espInput.Topic)
+	eventID, createdAt, err := ec.CreateUseCase.Run(espInput.Serie, espInput.Title, espInput.Description, espInput.Emitter, espInput.Topic)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error al registrar evento: %v", err), http.StatusInternalServerError)
 		return
@@ -59,6 +60,7 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 	eventNotification := map[string]interface{}{
 		"id":          eventID,
 		"createdAt":   createdAt,
+		"serie":       espInput.Serie,
 		"title":       espInput.Title,
 		"description": espInput.Description,
 		"emitter":     espInput.Emitter,

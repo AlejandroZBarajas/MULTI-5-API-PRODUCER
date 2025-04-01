@@ -13,8 +13,8 @@ func NewCreateEvent(repo domain.EventInterface) *CreateEvent {
 	return &CreateEvent{repo: repo}
 }
 
-func (ce *CreateEvent) Run(title string, description string, emitter string, topic string) (int, string, error) {
-	event := evententity.CreateEvent(title, description, emitter, topic)
+func (ce *CreateEvent) Run(serie string, title string, description float32, emitter string, topic string) (int, string, error) {
+	event := evententity.CreateEvent(serie, title, description, emitter, topic)
 
 	id, createdAt, err := ce.repo.Create(event)
 	if err != nil {
