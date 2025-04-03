@@ -80,7 +80,7 @@ func (ec *EventController) CreateNewHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(fmt.Sprintf("%s : %s .Registrado desde: '%s' con ID: %d", espInput.Title, espInput.Description, espInput.Emitter, eventID)))
+	w.Write([]byte(fmt.Sprintf("%s : %s .Registrado desde: '%s' con ID: %d y TOPIC: %s ", espInput.Title, espInput.Description, espInput.Serie, eventID, espInput.Topic)))
 }
 
 func (ec *EventController) GetAllHandler(w http.ResponseWriter, r *http.Request) {

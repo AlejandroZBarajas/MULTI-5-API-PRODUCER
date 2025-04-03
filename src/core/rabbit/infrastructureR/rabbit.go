@@ -7,7 +7,6 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joho/godotenv"
-	//"github.com/streadway/amqp"
 )
 
 type MQTTClient struct {
@@ -57,6 +56,11 @@ func NewMQTTClient() (*MQTTClient, error) {
 }
 
 func (client *MQTTClient) PublishMessage(topic string, message []byte) error {
+
+	if topic == "" {
+		return fmt.Errorf("el tópico MQTT está vacío")
+	}
+
 	token := client.client.Publish(topic, 0, false, message)
 	token.Wait()
 
@@ -65,41 +69,3 @@ func (client *MQTTClient) PublishMessage(topic string, message []byte) error {
 	}
 	return nil
 }
-
-/*
-func (client *RabbitMQ) Close() error {
-	if err := client.channel.Close(); err != nil {
-		return err
-	}
-	return client.connection.Close()
-}
-
-func (client *RabbitMQ) DeclareQueue(queueName, routingKey string) error {
-
-	_, err := client.channel.QueueDeclare(
-		queueName, // Nombre de la cola
-		true,      // Durable
-		false,     // Auto-delete
-		false,     // Exclusive
-		false,     // NoWait
-		nil,       // Argumentos adicionales
-	)
-	if err != nil {
-		return fmt.Errorf("error al declarar la cola %s: %w", queueName, err)
-	}
-
-	err = client.channel.QueueBind(
-		queueName,       // Nombre de la cola
-		routingKey,      // Routing key (ej: "notificaciones.*")
-		client.exchange, // Exchange
-		false,           // NoWait
-		nil,             // Argumentos
-	)
-	if err != nil {
-		return fmt.Errorf("error al enlazar la cola %s con el routing key %s: %w", queueName, routingKey, err)
-	}
-
-	fmt.Printf("✅ Cola '%s' enlazada a exchange '%s' con routing key '%s'\n", queueName, client.exchange, routingKey)
-	return nil
-}
-*/
